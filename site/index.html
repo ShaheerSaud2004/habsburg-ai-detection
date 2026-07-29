@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contamination Detection Is Not Collapse Monitoring</title>
+<meta name="description" content="A reproducible study: synthetic-text detection and model-collapse monitoring are fundamentally different objectives." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0f; --bg-soft:#0e1016; --panel:#13151d; --panel-2:#181b25; --panel-3:#1d2130;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.13);
+  --ink:#f3f5f9; --ink-2:#c2c8d6; --muted:#8b93a7; --faint:#5b6373;
+  --gold:#f3b24a; --gold-2:#ffd27a; --blue:#6aa8ff; --violet:#9b8cff; --green:#46d39a; --red:#ff6b78;
+  --display:'Space Grotesk',-apple-system,system-ui,sans-serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:16px; --r-lg:22px;
+  --shadow:0 24px 60px -20px rgba(0,0,0,.7);
+  --maxw:1140px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:16.5px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:rgba(243,178,74,.28)}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:500}
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.08;letter-spacing:-.02em}
+h2{font-size:clamp(1.9rem,3.6vw,2.7rem);margin-bottom:.25em}
+.lede{color:var(--ink-2);font-size:clamp(1.05rem,1.6vw,1.22rem);max-width:760px}
+.muted{color:var(--muted)}
+.section{padding:clamp(72px,9vw,128px) 0;position:relative}
+.section + .section{border-top:1px solid var(--line)}
+.center{text-align:center}
+
+/* scroll progress */
+#progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:120;background:linear-gradient(90deg,var(--gold),var(--gold-2))}
+
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);background:rgba(10,11,15,.6);border-bottom:1px solid transparent;transition:.3s}
+nav.scrolled{background:rgba(10,11,15,.82);border-bottom-color:var(--line)}
+nav .wrap{display:flex;align-items:center;height:64px;gap:24px}
+.brand{font-family:var(--display);font-weight:700;letter-spacing:-.01em;font-size:1.05rem;display:flex;align-items:center;gap:9px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 14px var(--gold)}
+.navlinks{margin-left:auto;display:flex;gap:26px}
+.navlinks a{color:var(--muted);font-size:.9rem;font-weight:500;transition:.2s}
+.navlinks a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:12px;font-weight:600;font-size:.92rem;border:1px solid var(--line-2);background:var(--panel-2);transition:.2s;cursor:pointer}
+.btn:hover{border-color:var(--gold);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#241a02;border:none;box-shadow:0 10px 30px -10px rgba(243,178,74,.5)}
+.btn.primary:hover{filter:brightness(1.05)}
+.nav-cta{display:flex;gap:10px}
+
+/* hero */
+.hero{position:relative;padding:150px 0 90px;overflow:hidden;background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);background-size:28px 28px}
+.aurora{position:absolute;inset:-40% -10% auto;height:900px;filter:blur(90px);opacity:.5;pointer-events:none;z-index:0}
+.aurora .b{position:absolute;border-radius:50%;mix-blend-mode:screen;animation:float 16s ease-in-out infinite}
+.aurora .b1{width:520px;height:520px;background:radial-gradient(circle,rgba(243,178,74,.55),transparent 65%);left:8%;top:0}
+.aurora .b2{width:560px;height:560px;background:radial-gradient(circle,rgba(106,168,255,.42),transparent 65%);right:6%;top:60px;animation-delay:-5s}
+.aurora .b3{width:440px;height:440px;background:radial-gradient(circle,rgba(155,140,255,.4),transparent 65%);left:42%;top:120px;animation-delay:-9s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(0,40px) scale(1.07)}}
+.hero .wrap{position:relative;z-index:1}
+.hero h1{font-size:clamp(2.5rem,6.2vw,5rem);max-width:14ch;margin:.3em 0 .12em}
+.hero h1 .grad{background:linear-gradient(120deg,var(--gold-2),var(--gold) 55%,#e0913a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.thesis{margin-top:26px;max-width:720px;font-size:clamp(1.05rem,1.7vw,1.32rem);color:var(--ink);font-weight:500;border-left:2px solid var(--gold);padding-left:20px;font-style:italic}
+.hero-cta{display:flex;gap:13px;flex-wrap:wrap;margin-top:34px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:64px}
+.stat{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.stat .n{font-family:var(--display);font-size:clamp(1.7rem,2.6vw,2.3rem);font-weight:700;background:linear-gradient(120deg,#fff,var(--gold-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{font-size:.85rem;color:var(--muted);margin-top:6px;line-height:1.45}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal[data-d="1"]{transition-delay:.08s}.reveal[data-d="2"]{transition-delay:.16s}.reveal[data-d="3"]{transition-delay:.24s}
+
+/* generic */
+.grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center}
+.card{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;transition:.25s}
+.card:hover{border-color:rgba(243,178,74,.35);transform:translateY(-3px);box-shadow:0 24px 60px -20px rgba(0,0,0,.7),0 0 0 1px rgba(243,178,74,.12)}
+.kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:18px}
+ul.clean{list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.clean li{padding-left:24px;position:relative;color:var(--ink-2)}
+ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--gold);transform:rotate(45deg)}
+
+/* UX: anchor offset under fixed nav */
+section[id]{scroll-margin-top:78px}
+/* UX: focus visibility */
+a:focus-visible,button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:8px}
+/* UX: hamburger + mobile menu */
+.burger{display:none;margin-left:auto;width:44px;height:44px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel-2);cursor:pointer;align-items:center;justify-content:center;flex-direction:column;gap:5px}
+.burger span{display:block;width:18px;height:2px;background:var(--ink);border-radius:2px;transition:.25s}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobilemenu{position:fixed;top:64px;left:0;right:0;z-index:99;background:rgba(10,11,15,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);display:none;flex-direction:column;padding:10px 26px 18px}
+.mobilemenu.open{display:flex}
+.mobilemenu a{padding:13px 4px;color:var(--ink-2);font-weight:500;border-bottom:1px solid var(--line);font-size:1rem}
+.mobilemenu a:last-child{border-bottom:none}
+.mobilemenu a.active{color:var(--gold-2)}
+/* UX: scrollspy active state */
+.navlinks a.active{color:var(--gold-2)}
+/* UX: figure lightbox */
+figure img{cursor:zoom-in}
+#lb{position:fixed;inset:0;z-index:200;background:rgba(5,6,10,.93);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:4vh 4vw;cursor:zoom-out}
+#lb.open{display:flex}
+#lb img{max-width:100%;max-height:100%;border-radius:14px;box-shadow:0 40px 120px -20px rgba(0,0,0,.9)}
+#lb .hint{position:absolute;bottom:20px;left:0;right:0;text-align:center;color:var(--muted);font-size:.85rem}
+/* UX: table scroll on small screens */
+.scrollwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scrollwrap .tbl{min-width:480px}
+/* UX: back to top */
+#totop{position:fixed;right:22px;bottom:22px;z-index:90;width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:var(--panel-2);color:var(--gold-2);font-size:1.2rem;cursor:pointer;opacity:0;pointer-events:none;transition:.3s;box-shadow:var(--shadow)}
+#totop.show{opacity:1;pointer-events:auto}
+#totop:hover{border-color:var(--gold);transform:translateY(-2px)}
+
+/* ask the research */
+.ask-box{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;margin-top:30px}
+.ask-row{display:flex;gap:12px}
+.ask-row input{flex:1;background:var(--bg-soft);color:var(--ink);border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;font-family:var(--sans);font-size:.98rem;transition:.2s}
+.ask-row input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(243,178,74,.1)}
+.ask-answer{margin-top:18px;min-height:24px;color:var(--ink-2);font-size:.98rem;line-height:1.75;white-space:pre-wrap;display:none}
+.ask-answer.on{display:block}
+.ask-answer .cursor{display:inline-block;width:8px;height:1.1em;background:var(--gold);vertical-align:text-bottom;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.ask-status{margin-top:14px;font-size:.85rem;color:var(--muted)}
+.ask-live{display:inline-flex;align-items:center;gap:7px}
+.ask-live .dot2{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.ask-live.off .dot2{background:var(--red);box-shadow:0 0 10px var(--red)}
+
+/* walkthrough timeline */
+.steps{position:relative;margin-top:38px;display:flex;flex-direction:column;gap:0}
+.step{position:relative;display:grid;grid-template-columns:64px 1fr;gap:22px;padding:0 0 38px}
+.step::before{content:"";position:absolute;left:31px;top:54px;bottom:6px;width:2px;background:linear-gradient(var(--line-2),var(--line))}
+.step:last-child::before{display:none}
+.step .num{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:1.5rem;background:linear-gradient(180deg,var(--panel-3),var(--panel));border:1px solid var(--line-2);color:var(--gold)}
+.step h3{font-size:1.25rem;margin:.45em 0 .3em}
+.step p{color:var(--ink-2);max-width:700px}
+.step .aside{margin-top:10px;font-size:.9rem;color:var(--muted);border-left:2px solid var(--line-2);padding-left:14px;font-style:italic}
+@media(max-width:700px){.step{grid-template-columns:48px 1fr;gap:14px}.step .num{width:48px;height:48px;font-size:1.15rem;border-radius:14px}.step::before{left:23px}}
+
+/* concept diagram */
+.concept{display:grid;gap:14px;margin-top:34px}
+.lane{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;position:relative;overflow:hidden}
+.lane::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.lane.det::before{background:linear-gradient(var(--blue),#3f7fd6)}
+.lane.mon::before{background:linear-gradient(var(--gold-2),var(--gold))}
+.lane .tag{font-family:var(--display);font-weight:700;font-size:1.15rem}
+.lane.det .tag{color:var(--blue)}.lane.mon .tag{color:var(--gold)}
+.lane .flow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--ink-2);font-size:.96rem}
+.lane .pill{background:var(--panel-3);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.86rem;white-space:nowrap}
+.lane .arr{color:var(--faint)}
+.matrix{width:100%;border-collapse:separate;border-spacing:0;margin-top:18px;font-size:.92rem;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.matrix th,.matrix td{padding:13px 16px;text-align:center;border-bottom:1px solid var(--line)}
+.matrix th:first-child,.matrix td:first-child{text-align:left;font-weight:500}
+.matrix thead th{background:var(--panel-3);font-family:var(--display);font-weight:600;color:var(--ink)}
+.matrix tbody tr:last-child td{border-bottom:none}
+.cell{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:600;font-size:.82rem}
+.good{background:rgba(70,211,154,.16);color:var(--green)}
+.ok{background:rgba(243,178,74,.16);color:var(--gold-2)}
+.bad{background:rgba(255,107,120,.16);color:var(--red)}
+
+/* method signals */
+.sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.sig{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:22px;transition:.25s}
+.sig:hover{transform:translateY(-3px);border-color:var(--line-2)}
+.sig .w{font-family:var(--mono);font-size:.74rem;color:var(--gold);float:right}
+.sig h4{font-family:var(--display);font-size:1.05rem;margin:.1em 0 .35em}
+.sig p{font-size:.9rem;color:var(--muted)}
+
+/* demo */
+.demo{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start;margin-top:34px}
+textarea{width:100%;min-height:260px;background:var(--bg-soft);color:var(--ink);border:1px solid var(--line-2);border-radius:var(--r);padding:18px;font-family:var(--mono);font-size:.88rem;line-height:1.6;resize:vertical;transition:.2s}
+textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(243,178,74,.1)}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:.83rem;padding:8px 15px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink-2);cursor:pointer;transition:.2s}
+.chip:hover{border-color:var(--gold);color:var(--ink)}
+.gauge-card{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;position:sticky;top:84px}
+.gauge-wrap{position:relative;text-align:center}
+.gauge-val{position:absolute;left:0;right:0;top:54%;transform:translateY(-50%)}
+.gauge-val .num{font-family:var(--display);font-size:3.2rem;font-weight:700;line-height:1}
+.gauge-val .of{font-size:.8rem;color:var(--muted)}
+.verdict{display:inline-block;margin-top:6px;padding:6px 16px;border-radius:999px;font-weight:600;font-size:.9rem}
+.bars{margin-top:20px;display:flex;flex-direction:column;gap:11px}
+.bar .lab{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.bar .track{height:7px;background:var(--bg-soft);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--gold));transition:width .5s cubic-bezier(.2,.7,.2,1)}
+
+/* tables */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:.92rem;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tbl caption{caption-side:top;text-align:left;color:var(--muted);font-size:.84rem;margin-bottom:10px}
+.tbl th,.tbl td{padding:11px 15px;text-align:right;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{background:var(--panel-3);color:var(--ink);font-family:var(--display);font-weight:600;font-size:.85rem}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tr.hl td{background:rgba(243,178,74,.07);font-weight:700;color:var(--ink)}
+.tbl td.best{color:var(--green);font-weight:700}
+figure{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;overflow:hidden;transition:.3s}
+figure:hover{border-color:rgba(243,178,74,.35);transform:translateY(-3px);box-shadow:var(--shadow)}
+figure img{border-radius:10px}
+figcaption{color:var(--muted);font-size:.85rem;margin-top:12px;background:transparent;line-height:1.5}
+.figgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--gold);background:linear-gradient(180deg,var(--panel-2),var(--panel));border-radius:0 var(--r) var(--r) 0;padding:20px 22px;margin-top:18px}
+.callout.good{border-left-color:var(--green)}
+.callout.bad{border-left-color:var(--red)}
+.callout h4{font-family:var(--display);font-size:1.05rem;margin-bottom:.3em}
+.callout p{color:var(--ink-2);font-size:.95rem}
+.findgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+.tagrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tagrow span{font-family:var(--mono);font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+footer{padding:64px 0 70px;border-top:1px solid var(--line);color:var(--muted);font-size:.92rem}
+footer .big{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);color:var(--ink);max-width:680px;margin-bottom:18px;font-weight:600;letter-spacing:-.02em}
+h3.sub{font-family:var(--display);font-size:1.2rem;margin:36px 0 8px;color:var(--ink)}
+
+@media(max-width:900px){
+  .burger{display:flex}
+  .nav-cta{display:none}
+  .grid2,.demo,.figgrid,.findgrid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .sigs{grid-template-columns:1fr}
+  .navlinks{display:none}
+  .gauge-card{position:static}
+  .lane{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<nav><div class="wrap">
+  <div class="brand"><span class="dot"></span>Habsburg<span style="color:var(--faint)">·</span>AI</div>
+  <div class="navlinks">
+    <a href="#start">Start here</a><a href="#ask">Ask AI</a><a href="#claim">The claim</a><a href="#method">Method</a><a href="#demo">Live demo</a>
+    <a href="#results">Results</a><a href="#collapse">Collapse</a><a href="#tailguard">TailGuard</a><a href="#paper">Paper</a>
+  </div>
+  <div class="nav-cta"><a class="btn primary" href="Shaheer_Saud_Model_Collapse.pdf" target="_blank">Read paper →</a></div>
+  <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</div></nav>
+<div class="mobilemenu" id="mobilemenu">
+  <a href="#start">Start here</a><a href="#ask">Ask AI</a><a href="#claim">The claim</a><a href="#method">Method</a>
+  <a href="#demo">Live demo</a><a href="#results">Results</a><a href="#collapse">Collapse</a><a href="#tailguard">TailGuard</a>
+  <a href="#paper">Paper</a><a href="Shaheer_Saud_Model_Collapse.pdf" target="_blank" style="color:var(--gold-2)">Read the paper (PDF) →</a>
+</div>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
+  <div class="wrap">
+    <div class="eyebrow reveal">AI-text detection · model collapse · 8 generators</div>
+    <h1 class="reveal" data-d="1">Contamination detection is <span class="grad">not</span> collapse monitoring.</h1>
+    <p class="lede reveal" data-d="2">A reproducible study of synthetic-text detection and model collapse. Six interpretable, dependency-free statistics generalize to unseen language models, yet per-document detection turns out to be a fundamentally different objective from distribution-level collapse monitoring.</p>
+    <p class="thesis reveal" data-d="2">A detector can correctly identify synthetic documents while completely failing to detect distributional degeneration.</p>
+    <div class="hero-cta reveal" data-d="3">
+      <a class="btn primary" href="Shaheer_Saud_Model_Collapse.pdf" target="_blank">Read the paper (PDF)</a>
+      <a class="btn" href="#demo">Try the live detector</a>
+      <a class="btn" href="#results">See the results</a>
+    </div>
+    <div class="stats">
+      <div class="stat reveal"><div class="n" data-count="0.915" data-dec="3">0.915</div><div class="l">mean AUC on <b>unseen</b> generators (10 seeds, p=0.002 vs perplexity)</div></div>
+      <div class="stat reveal" data-d="1"><div class="n" data-count="8" data-dec="0">8</div><div class="l">real LLMs evaluated: GPT-2/3/4, ChatGPT, Llama, Mistral, Cohere, MPT</div></div>
+      <div class="stat reveal" data-d="2"><div class="n">69 → 7</div><div class="l">reference-perplexity collapse of a model retrained on its own output</div></div>
+      <div class="stat reveal" data-d="3"><div class="n">100%</div><div class="l">stdlib core — reproducible from a single fixed seed</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- START HERE -->
+<section class="section" id="start"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">New here? Start with the story</span></div>
+  <h2 class="reveal" data-d="1">What this is about, in five steps</h2>
+  <p class="lede reveal" data-d="1">No background needed. Here is the whole project, from the problem to the finding.</p>
+  <div class="steps">
+    <div class="step reveal"><div class="num">1</div><div>
+      <h3>AI text is flooding the internet</h3>
+      <p>A growing share of the web is now written by language models. Since new models learn from text scraped off that same web, models are increasingly <b>trained on the output of other models</b> — and eventually on their own.</p>
+    </div></div>
+    <div class="step reveal"><div class="num">2</div><div>
+      <h3>Retraining on your own output breaks you — that's "model collapse"</h3>
+      <p>Like photocopying a photocopy, each cycle loses detail. Rare words disappear, phrasing narrows, everything drifts toward the same bland average. Researchers call it <b>model collapse</b>; the internet nicknamed it <b>"Habsburg AI."</b> We reproduced it on three different architectures — vocabulary fell up to 87% in a few generations.</p>
+      <p class="aside">The name is a joke about the Habsburg royal family, whose habit of marrying relatives famously degraded the bloodline. Same idea, but with training data.</p>
+    </div></div>
+    <div class="step reveal"><div class="num">3</div><div>
+      <h3>The obvious fix: run an AI detector over your data. Right?</h3>
+      <p>If AI text is the contaminant, just point a detector (like GPTZero or GLTR) at every document and filter out what it flags. That is what most people — and some products — assume works. It sounds airtight.</p>
+    </div></div>
+    <div class="step reveal"><div class="num">4</div><div>
+      <h3>Our finding: the detector stays silent while the dataset dies</h3>
+      <p>We built a detector good enough to score <b>0.915 AUC on language models it never saw</b> — then watched it fail. As our test models collapsed (their text quality measurably cratering), the detector's verdicts <b>barely moved</b>: about 91% of collapsed documents were never flagged. Even a much stronger detector had the same blind spot. The reason is structural: a detector judges <b>one document at a time</b>, but collapse lives in the <b>overall distribution</b> — no single document looks broken; the <i>variety across documents</i> is what vanishes.</p>
+    </div></div>
+    <div class="step reveal"><div class="num">5</div><div>
+      <h3>What actually works: watch the distribution, not the documents</h3>
+      <p>Simple corpus-level numbers — vocabulary size, n-gram diversity, perplexity under a fixed reference model — tracked collapse <b>cleanly and monotonically</b> in every experiment. That is the paper's message, and it is what our tool <a href="#tailguard" style="color:var(--gold-2)">TailGuard</a> automates: a health check for training data that fails your CI before a bad dataset reaches a training run.</p>
+    </div></div>
+  </div>
+</div></section>
+
+<!-- ASK -->
+<section class="section" id="ask"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Ask the research · live</span></div>
+  <h2 class="reveal" data-d="1">Questions? Ask the paper's assistant</h2>
+  <p class="lede reveal" data-d="1">A small language model running on the author's own hardware, grounded in this paper's actual results. It streams answers live — and it will tell you when something is outside what the research covers.</p>
+  <div class="ask-box reveal" data-d="2">
+    <div class="chips" style="margin:0 0 16px">
+      <span class="chip ask-chip">What is model collapse?</span>
+      <span class="chip ask-chip">Why don't AI detectors catch it?</span>
+      <span class="chip ask-chip">What should I monitor instead?</span>
+      <span class="chip ask-chip">How was this tested?</span>
+    </div>
+    <div class="ask-row">
+      <input id="askq" maxlength="500" placeholder="Ask anything about this research…" />
+      <button class="btn primary" id="askbtn">Ask</button>
+    </div>
+    <div class="ask-answer" id="askans"></div>
+    <div class="ask-status"><span class="ask-live" id="asklive"><span class="dot2"></span><span id="asklabel">assistant online — self-hosted, answers may be imperfect; trust the paper over the chatbot</span></span></div>
+  </div>
+</div></section>
+
+<!-- CLAIM -->
+<section class="section" id="claim"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">The central claim</span></div>
+  <h2 class="reveal" data-d="1">Two questions that get conflated</h2>
+  <p class="lede reveal" data-d="1">Flagging an AI document and warning that a corpus is collapsing sound like the same tool. They are not — and different signals answer them.</p>
+
+  <div class="concept">
+    <div class="lane det reveal" data-d="1">
+      <div class="tag">AI-Text Detection</div>
+      <div class="flow"><span class="pill">operates on ONE document</span><span class="arr">→</span><span class="pill">“is this text synthetic?”</span></div>
+    </div>
+    <div class="lane mon reveal" data-d="2">
+      <div class="tag">Collapse Monitoring</div>
+      <div class="flow"><span class="pill">operates on the DISTRIBUTION</span><span class="arr">→</span><span class="pill">“is the corpus losing diversity?”</span></div>
+    </div>
+  </div>
+
+  <table class="matrix reveal" data-d="2">
+    <thead><tr><th>Signal / metric</th><th>Flag one AI document</th><th>Detect corpus collapse</th></tr></thead>
+    <tbody>
+      <tr><td>Perplexity (fixed LM)</td><td><span class="cell good">Good</span></td><td><span class="cell good">Good</span></td></tr>
+      <tr><td>Per-document detector score</td><td><span class="cell good">Good</span></td><td><span class="cell bad">Poor</span></td></tr>
+      <tr><td>Vocabulary size</td><td><span class="cell bad">Poor</span></td><td><span class="cell good">Excellent</span></td></tr>
+      <tr><td>Distinct n-gram diversity</td><td><span class="cell bad">Poor</span></td><td><span class="cell good">Excellent</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted reveal" style="margin-top:14px;font-size:.92rem">The detector is a deliberately simple instrument — the <em>SyntheticTextProbe</em> — not the contribution. "Habsburg AI" names the phenomenon we study (model collapse), after Shumailov et al. (2023).</p>
+</div></section>
+
+<!-- METHOD -->
+<section class="section" id="method"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">The instrument</span></div>
+  <h2 class="reveal" data-d="1">Six interpretable signals</h2>
+  <p class="lede reveal" data-d="1">Each normalized to 0–1 and combined with a fixed weight into a 0–100 synthetic-likelihood. Three are inverted so a higher contribution always means <i>more synthetic</i>. Pure Python standard library.</p>
+  <div class="sigs">
+    <div class="sig reveal"><span class="w">w 0.20</span><h4>Filler density</h4><p>Canned filler phrases ("it is important to note…") per ~50 tokens.</p></div>
+    <div class="sig reveal" data-d="1"><span class="w">w 0.18</span><h4>Repetition</h4><p>Fraction of trigrams that are repeats — looping phrasing.</p></div>
+    <div class="sig reveal" data-d="2"><span class="w">w 0.16</span><h4>Lexical diversity</h4><p>Type-token ratio. Low diversity → more synthetic.</p></div>
+    <div class="sig reveal"><span class="w">w 0.16</span><h4>N-gram diversity</h4><p>Distinct-trigram ratio. Low → more synthetic.</p></div>
+    <div class="sig reveal" data-d="1"><span class="w">w 0.15</span><h4>Burstiness</h4><p>Sentence-length variation. Uniform lengths → more synthetic.</p></div>
+    <div class="sig reveal" data-d="2"><span class="w">w 0.15</span><h4>Duplicate similarity</h4><p>Overlap with a corpus of known model outputs — catches recycling.</p></div>
+  </div>
+  <figure class="reveal" style="margin-top:26px"><img src="figures/dark_figure_ablation.png" alt="Signal ablation"><figcaption>Which signals actually matter (leave-one-out ablation on HC3): <b>burstiness</b> and <b>lexical diversity</b> carry the detector; duplicate-similarity is inert without a reference corpus — solo, it sits exactly at chance.</figcaption></figure>
+</div></section>
+
+<!-- DEMO -->
+<section class="section" id="demo"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Live demo</span></div>
+  <h2 class="reveal" data-d="1">Score your own text</h2>
+  <p class="lede reveal" data-d="1">A faithful JavaScript port of the detector's six signals, running entirely in your browser. Paste text or load a preset.</p>
+  <div class="demo reveal" data-d="1">
+    <div>
+      <textarea id="ta" spellcheck="false"></textarea>
+      <div class="chips">
+        <span class="chip" data-preset="human">Human-style text</span>
+        <span class="chip" data-preset="ai">AI-style text</span>
+        <span class="chip" data-preset="clear">Clear</span>
+      </div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 220 140" width="100%" style="overflow:visible">
+          <path d="M20 130 A90 90 0 0 1 200 130" fill="none" stroke="var(--bg-soft)" stroke-width="16" stroke-linecap="round"/>
+          <path id="gArc" d="M20 130 A90 90 0 0 1 200 130" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" style="transition:stroke-dashoffset .6s cubic-bezier(.2,.7,.2,1),stroke .4s"/>
+        </svg>
+        <div class="gauge-val"><div class="num" id="score">0</div><div class="of">synthetic-likelihood / 100</div></div>
+      </div>
+      <div class="center"><span class="verdict" id="verdict">—</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- RESULTS -->
+<section class="section" id="results"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Results · real data</span></div>
+  <h2 class="reveal" data-d="1">Detection on real human-vs-LLM text</h2>
+
+  <h3 class="sub reveal">The headline — generalizing to unseen generators</h3>
+  <div class="grid2">
+    <div class="reveal" data-d="1">
+      <table class="tbl">
+        <caption>Leave-one-model-out AUC on the held-out generator (reference seed 1234). Mean is over all 8 folds; 5 shown.</caption>
+        <thead><tr><th>Held-out</th><th>Classifier</th><th>Perplexity</th><th>Zero-shot</th></tr></thead>
+        <tbody>
+          <tr><td>Mistral-chat</td><td class="best">0.981</td><td>0.965</td><td>0.784</td></tr>
+          <tr><td>ChatGPT</td><td class="best">0.976</td><td>0.968</td><td>0.848</td></tr>
+          <tr><td>GPT-4</td><td class="best">0.907</td><td>0.868</td><td>0.734</td></tr>
+          <tr><td>Cohere</td><td>0.837</td><td>0.862</td><td>0.636</td></tr>
+          <tr><td>GPT-2</td><td>0.834</td><td>0.840</td><td>0.594</td></tr>
+          <tr class="hl"><td>Mean</td><td>0.924</td><td>0.911</td><td>0.732</td></tr>
+        </tbody>
+      </table>
+      <div class="callout good"><h4>Significant across 10 seeds</h4><p>Mean <b>0.915 ± 0.006</b> (95% CI [0.911, 0.920]) vs perplexity <b>0.903 ± 0.007</b> — non-overlapping CIs. Paired permutation test: <b>+0.013</b>, wins <b>10/10 seeds</b>, <b>p = 0.002</b>.</p></div>
+      <figure class="reveal" style="margin-top:16px"><img src="figures/dark_figure_multiseed.png" alt="Per-seed comparison"><figcaption>Every seed, same story: re-draw the data split 10 times and the classifier lands above perplexity every single time.</figcaption></figure>
+    </div>
+    <figure class="reveal" data-d="2"><img src="figures/dark_figure7_lomo.png" alt="Leave-one-model-out AUC"><figcaption>The trained classifier generalizes to unseen generators, beating perplexity alone and the zero-shot heuristic.</figcaption></figure>
+  </div>
+
+  <h3 class="sub reveal">An honest comparison — GLTR beats the heuristics</h3>
+  <div class="grid2">
+    <figure class="reveal" data-d="1"><img src="figures/dark_figure6_crossmodel.png" alt="Cross-model AUC"><figcaption>One fixed zero-shot detector vs eight generators: strong on chat models, near chance on GPT-2 base completions.</figcaption></figure>
+    <div class="reveal" data-d="2">
+      <table class="tbl">
+        <caption>Zero-shot AUC. DetectGPT-curvature & GPTZero aren't run (white-box / paid API).</caption>
+        <thead><tr><th>Detector (zero-shot)</th><th>HC3</th><th>RAID</th></tr></thead>
+        <tbody>
+          <tr><td>SyntheticTextProbe (heuristics)</td><td>0.915</td><td>0.724</td></tr>
+          <tr class="hl"><td>GLTR — GPT-2 log-prob</td><td class="best">0.995</td><td class="best">0.862</td></tr>
+          <tr class="hl"><td>GLTR — GPT-2 top-10 rank</td><td class="best">0.995</td><td class="best">0.848</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><h4>This strengthens the thesis</h4><p>A white-box likelihood detector clearly wins for detection — but it is <b>also per-document</b>, so it is equally blind to collapse. The gap isn't an artifact of a weak detector.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- COLLAPSE -->
+<section class="section" id="collapse"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Model collapse</span></div>
+  <h2 class="reveal" data-d="1">Watching a model eat its own output</h2>
+  <p class="lede reveal" data-d="1">We retrain a model on the text it just generated, generation after generation, and instrument it with the same detector and diversity metrics.</p>
+  <figure class="reveal" data-d="1" style="margin-top:30px">
+    <div id="cviz-wrap" style="position:relative">
+      <svg id="cviz" viewBox="0 0 1000 400" width="100%" style="display:block"></svg>
+    </div>
+    <figcaption>Live from the real run — distilGPT-2 retrained on its own output. The <b style="color:var(--red)">reference perplexity</b> (collapse signal) crashes 69 → 7 while the <b style="color:var(--gold)">per-document detector</b> creeps 16.7 → 27.1 and never reaches its threshold of 50. Data: <span class="mono" style="font-size:.8em">collapse_gpt2_results.json</span>, seed 1234.</figcaption>
+  </figure>
+  <div class="findgrid">
+    <div class="callout reveal"><h4>Holds at 100× scale</h4><p>Scaled the corpus to <b>150 / 1,500 / 15,000</b> docs on <b>two</b> datasets. Larger corpora collapse more slowly (vocab loss −96% → −32%), but in all six runs the distribution metrics still fall and the detector never flags it — <b>contamination ≤0.1% in all six runs</b>.</p></div>
+    <div class="callout good reveal" data-d="1"><h4>Holds for a modern LLM</h4><p>Not just 2019-era distilGPT-2: <b>Qwen2.5-0.5B</b> (2024) LoRA-fine-tuned recursively — reference perplexity <b>37 → 2.9</b>, vocab <b>−87%</b> — yet the detector stays flat (<b>17.6 → 18.4</b>), contamination <b>2%</b>.</p></div>
+  </div>
+  <figure class="reveal" style="margin-top:20px"><img src="figures/dark_figure_universal.png" alt="Collapse across architectures"><figcaption>Collapse is architecture-agnostic: a trigram model, 2019's distilGPT-2, and 2024's Qwen2.5 all lose diversity generation over generation (left), and both neural models' reference perplexity crashes on the same curve (right).</figcaption></figure>
+</div></section>
+
+<!-- TAILGUARD MVP -->
+<section class="section" id="tailguard"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">The product · TailGuard</span></div>
+  <h2 class="reveal" data-d="1">🛡️ TailGuard — a contamination tripwire for training data</h2>
+  <p class="lede reveal" data-d="1">The paper's conclusion, productized: don't run an AI detector per document — monitor the <b>distribution</b>. TailGuard snapshots a corpus's health (vocabulary, n-gram diversity, burstiness, duplication, score distribution), compares snapshots, and <b>fails CI</b> when a corpus is degrading. Zero dependencies, <a href="LICENSE.txt" style="color:var(--gold-2)">MIT-licensed</a> — <a href="tailguard.py" style="color:var(--gold-2)">download the code</a>.</p>
+  <div class="grid2" style="margin-top:30px">
+    <div class="card reveal" data-d="1">
+      <h3 style="font-family:var(--display);margin-bottom:12px">Three commands</h3>
+      <pre class="mono" style="background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:16px;font-size:.82rem;line-height:1.7;overflow-x:auto"># snapshot a healthy corpus
+python3 tailguard.py scan data/ -o baseline.json
+
+# tripwire before every training run (CI)
+python3 tailguard.py compare baseline.json data/
+# exit 0 = healthy · 1 = warnings · 2 = critical
+
+# human-readable report
+python3 tailguard.py compare baseline.json data/ --html report.html</pre>
+    </div>
+    <div class="card reveal" data-d="2">
+      <h3 style="font-family:var(--display);margin-bottom:12px">Live demo — it caught what the detector missed</h3>
+      <p class="muted" style="font-size:.94rem">We contaminated a 1,500-doc human corpus with 60% collapsed + AI text. The per-document synthetic score <b>barely moved</b> (16.2 → 15.5 — the paper's exact blind spot). TailGuard's distribution metrics fired: trigram diversity <b>−11.1%</b>, bigram <b>−9.4%</b> → <b>WARNING, exit 1</b>.</p>
+      <div class="chips" style="margin-top:16px">
+        <a class="btn" href="demo_healthy.html" target="_blank">Healthy report →</a>
+        <a class="btn" href="demo_report.html" target="_blank">Degraded report →</a>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- FINDINGS -->
+<section class="section"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Honest findings</span></div>
+  <h2 class="reveal" data-d="1">What's true — including where the prediction was wrong</h2>
+  <div class="findgrid">
+    <div class="card reveal"><h4 style="font-family:var(--display);color:var(--green)">✓ Cheap features generalize</h4><p class="muted" style="margin-top:6px">A 7-feature classifier reaches 0.915 on generators it never trained on, beating heuristics and perplexity alone.</p></div>
+    <div class="card reveal" data-d="1"><h4 style="font-family:var(--display);color:var(--gold-2)">~ Zero-shot transfer is uneven</h4><p class="muted" style="margin-top:6px">One fixed detector ranges 0.57–0.83: strong on chat models, near chance on base GPT-2.</p></div>
+    <div class="card reveal"><h4 style="font-family:var(--display);color:var(--red)">✗ GPT-2 perplexity didn't win</h4><p class="muted" style="margin-top:6px">Predicted it would raise the floor; it didn't (0.895 vs 0.924). Reported with its caveat, not spun away.</p></div>
+    <div class="card reveal" data-d="1"><h4 style="font-family:var(--display);color:var(--red)">✗ The detector misses collapse</h4><p class="muted" style="margin-top:6px">Collapse is real (perplexity 69→7) but per-document detection barely moves — a different problem entirely.</p></div>
+  </div>
+</div></section>
+
+<!-- FIGURES -->
+<section class="section"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Figures</span></div>
+  <h2 class="reveal" data-d="1">Gallery</h2>
+  <div class="figgrid">
+    <figure class="reveal"><img src="figures/dark_figure5_roc.png" alt=""><figcaption>ROC on HC3 (real human vs ChatGPT).</figcaption></figure>
+    <figure class="reveal" data-d="1"><img src="figures/dark_figure10_scaling.png" alt=""><figcaption>Collapse at scale: diversity falls at every size; detector stays flat.</figcaption></figure>
+  </div>
+</div></section>
+
+<!-- PAPER -->
+<section class="section" id="paper"><div class="wrap">
+  <div class="kicker reveal"><span class="eyebrow">Paper & reproducibility</span></div>
+  <h2 class="reveal" data-d="1">Read it, run it</h2>
+  <div class="grid2" style="margin-top:30px">
+    <div class="card reveal" data-d="1">
+      <h3 style="font-family:var(--display);margin-bottom:10px">The paper</h3>
+      <p class="muted" style="margin-bottom:18px">An 8-page write-up: detector, baselines, LOMO classifier, ablation, GLTR comparison, scaling, collapse, and a candid threats-to-validity section.</p>
+      <a class="btn primary" href="Shaheer_Saud_Model_Collapse.pdf" target="_blank">Download PAPER.pdf</a>
+    </div>
+    <div class="card reveal" data-d="2">
+      <h3 style="font-family:var(--display);margin-bottom:10px">Reproducible by design</h3>
+      <ul class="clean" style="margin-bottom:6px">
+        <li>Core runs on the Python <b>standard library</b> — zero install.</li>
+        <li>Real corpora fetched over HTTP (HC3, RAID).</li>
+        <li>Fixed seed (1234); one isolated venv only for GPT-2 / neural collapse.</li>
+      </ul>
+      <div class="tagrow"><span>detector.py</span><span>lomo.py</span><span>crossmodel.py</span><span>collapse_modern.py</span><span>gltr_baseline.py</span></div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="big reveal">Per-document detection is not a reliable collapse monitor — and that distinction is the whole point.</div>
+  <div class="reveal">Shaheer Saud · <i>Independent</i> · <a href="Shaheer_Saud_Model_Collapse.pdf" style="color:var(--gold-2)">PAPER.pdf</a></div>
+  <div class="muted reveal" style="margin-top:8px;font-size:.84rem">Builds on Shumailov et al. (2023), HC3 (Guo et al. 2023), RAID (Dugan et al. 2024). All numbers shown are from the released result files.</div>
+</div></footer>
+
+<div id="lb" role="dialog" aria-label="Enlarged figure"><img id="lbimg" alt=""><div class="hint">click anywhere or press Esc to close</div></div>
+<button id="totop" aria-label="Back to top">↑</button>
+<script>
+/* ---- reveal on scroll ---- */
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---- nav + progress ---- */
+const nav=document.querySelector('nav'),prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',scrollY>20);
+  const h=document.documentElement.scrollHeight-innerHeight;
+  prog.style.width=(100*scrollY/h)+'%';
+});
+
+/* ---- count-up stats ---- */
+function countup(el){
+  const target=parseFloat(el.dataset.count),dec=parseInt(el.dataset.dec),t0=performance.now(),dur=1100;
+  function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3),v=target*e;el.textContent=v.toFixed(dec);if(p<1)requestAnimationFrame(step);else el.textContent=target.toFixed(dec)}
+  requestAnimationFrame(step);
+}
+const sio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){countup(e.target);sio.unobserve(e.target)}})},{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>sio.observe(el));
+
+/* ---- live detector (faithful JS port of SyntheticTextProbe) ---- */
+const FILLER=["it is important to note","it is worth noting","in conclusion","in summary","as we can see","a wide range of","plays a crucial role","plays a vital role","it is essential to","delve into","navigate the","in today's world","in the realm of","a testament to","rich tapestry","ever-evolving","ever-changing","shed light on","when it comes to","first and foremost","needless to say","in essence","furthermore","moreover","additionally","overall"];
+const W={repetition:.18,filler_density:.20,lexical_diversity:.16,ngram_diversity:.16,burstiness:.15,duplicate_similarity:.15};
+const INV=new Set(["lexical_diversity","ngram_diversity","burstiness"]);
+const clamp=x=>x<0?0:x>1?1:x;
+const toks=t=>(t.toLowerCase().match(/[a-z']+/g)||[]);
+const sents=t=>t.split(/[.!?]+/).map(s=>s.trim()).filter(Boolean);
+const tri=a=>{const o=[];for(let i=0;i+3<=a.length;i++)o.push(a[i]+' '+a[i+1]+' '+a[i+2]);return o};
+function rep(tk){const t=tri(tk);if(!t.length)return 0;const c={};t.forEach(g=>c[g]=(c[g]||0)+1);let r=0;for(const k in c)if(c[k]>1)r+=c[k];return clamp(r/t.length)}
+function fill(x,tk){if(!tk.length)return 0;const l=x.toLowerCase();let h=0;FILLER.forEach(p=>{let i=0;while((i=l.indexOf(p,i))!==-1){h++;i+=p.length}});return clamp(h/Math.max(1,tk.length/50))}
+function lex(tk){return tk.length?clamp(new Set(tk).size/tk.length):0}
+function ngd(tk){const t=tri(tk);return t.length?clamp(new Set(t).size/t.length):0}
+function burst(x){const L=sents(x).map(s=>toks(s).length).filter(n=>n>0);if(L.length<2)return 0;const m=L.reduce((a,b)=>a+b,0)/L.length;if(!m)return 0;const v=L.reduce((a,b)=>a+(b-m)*(b-m),0)/L.length;return clamp(Math.sqrt(v)/m)}
+function score(x){const tk=toks(x);const s={repetition:rep(tk),filler_density:fill(x,tk),lexical_diversity:lex(tk),ngram_diversity:ngd(tk),burstiness:burst(x),duplicate_similarity:0};let a=0,tw=0;for(const k in W){const v=INV.has(k)?1-s[k]:s[k];a+=W[k]*v;tw+=W[k]}return{l:Math.round(100*clamp(a/tw)*100)/100,s}}
+const LAB={repetition:"repetition",filler_density:"filler density",lexical_diversity:"lexical diversity (inv.)",ngram_diversity:"n-gram diversity (inv.)",burstiness:"burstiness (inv.)",duplicate_similarity:"duplicate similarity"};
+const arc=document.getElementById('gArc');
+function render(){
+  const x=document.getElementById('ta').value,{l,s}=score(x),has=!!x.trim();
+  const v=has?l:0;
+  document.getElementById('score').textContent=has?v.toFixed(0):'0';
+  arc.style.strokeDashoffset=283-(283*v/100);
+  arc.style.stroke=v>=50?'var(--red)':'var(--green)';
+  const vd=document.getElementById('verdict');
+  if(!has){vd.textContent='—';vd.style.background='var(--bg-soft)';vd.style.color='var(--muted)'}
+  else if(v>=50){vd.textContent='likely synthetic';vd.style.background='rgba(255,107,120,.16)';vd.style.color='var(--red)'}
+  else{vd.textContent='likely human';vd.style.background='rgba(70,211,154,.16)';vd.style.color='var(--green)'}
+  const b=document.getElementById('bars');b.innerHTML='';
+  for(const k in W){const raw=s[k],c=INV.has(k)?1-raw:raw;const el=document.createElement('div');el.className='bar';
+    el.innerHTML='<div class="lab"><span>'+LAB[k]+'</span><span>'+raw.toFixed(2)+'</span></div><div class="track"><div class="fill" style="width:'+(c*100).toFixed(0)+'%"></div></div>';b.appendChild(el)}
+}
+const PRE={
+  human:"Honestly? The ferry was late again, and the harbor smelled of diesel and saffron. I waited, watched a kestrel knife across the gray, and thought about nothing in particular. Some days the marsh swallows the light whole; other days it hands it back, brighter. My grandmother used to say the tide keeps its own ledger. She was usually right, and when she wasn't, she made it up beautifully.",
+  ai:"The powerful solution provides the powerful solution. The powerful solution provides the powerful solution. It is important to note that the robust system delivers the robust system. The robust system delivers the robust system. Furthermore, the powerful system ensures the powerful system. The powerful system ensures the powerful system. In conclusion, the robust solution provides the robust solution. Moreover, the powerful solution delivers the powerful solution.",
+  clear:""
+};
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{document.getElementById('ta').value=PRE[c.dataset.preset];render()}));
+document.getElementById('ta').addEventListener('input',render);
+document.getElementById('ta').value=PRE.ai;render();
+
+
+
+/* ---- UX: mobile menu, scrollspy, lightbox, tables, back-to-top ---- */
+(function(){
+  const burger=document.getElementById('burger'),menu=document.getElementById('mobilemenu');
+  burger.addEventListener('click',()=>{const o=menu.classList.toggle('open');burger.classList.toggle('open',o);burger.setAttribute('aria-expanded',o)});
+  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{menu.classList.remove('open');burger.classList.remove('open')}));
+  // scrollspy
+  const ids=['start','ask','claim','method','demo','results','collapse','tailguard','paper'];
+  const links=[...document.querySelectorAll('.navlinks a, .mobilemenu a')];
+  const spy=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+    links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));}})},
+    {rootMargin:'-40% 0px -55% 0px'});
+  ids.forEach(id=>{const s=document.getElementById(id);if(s)spy.observe(s)});
+  // lightbox
+  const lb=document.getElementById('lb'),lbimg=document.getElementById('lbimg');
+  document.querySelectorAll('figure img').forEach(im=>im.addEventListener('click',()=>{lbimg.src=im.src;lbimg.alt=im.alt||'figure';lb.classList.add('open')}));
+  lb.addEventListener('click',()=>lb.classList.remove('open'));
+  addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('open')});
+  // wrap tables for horizontal scroll on small screens
+  document.querySelectorAll('table.tbl, table.matrix').forEach(t=>{
+    const w=document.createElement('div');w.className='scrollwrap';t.parentNode.insertBefore(w,t);w.appendChild(t)});
+  // back to top
+  const tt=document.getElementById('totop');
+  addEventListener('scroll',()=>tt.classList.toggle('show',scrollY>900));
+  tt.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+})();
+
+/* ---- Ask the research (streams from /api/ask; key stays server-side) ---- */
+(function(){
+  const q=document.getElementById('askq'), btn=document.getElementById('askbtn'),
+        ans=document.getElementById('askans'), live=document.getElementById('asklive'),
+        label=document.getElementById('asklabel');
+  if(!q) return;
+  let busy=false;
+  function setStatus(ok,msg){live.classList.toggle('off',!ok);label.textContent=msg;}
+  async function ask(question){
+    if(busy||!question.trim())return;
+    busy=true;btn.textContent='…';ans.classList.add('on');
+    ans.innerHTML='<span class="cursor"></span>';
+    try{
+      const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});
+      if(r.status===429){setStatus(false,'the model is busy right now — try again in a minute');ans.textContent='';throw 0}
+      if(!r.ok){setStatus(false,'assistant is offline (it runs on the author\u2019s own machine) — the paper below has everything');ans.textContent='';throw 0}
+      const reader=r.body.getReader(), dec=new TextDecoder();let text='';
+      for(;;){const {done,value}=await reader.read();if(done)break;
+        text+=dec.decode(value,{stream:true});
+        ans.innerHTML='';ans.appendChild(document.createTextNode(text));
+        const c=document.createElement('span');c.className='cursor';ans.appendChild(c);}
+      ans.innerHTML='';ans.appendChild(document.createTextNode(text||'(no answer — try again)'));
+      setStatus(true,'assistant online — self-hosted, answers may be imperfect; trust the paper over the chatbot');
+    }catch(e){}
+    busy=false;btn.textContent='Ask';
+  }
+  btn.addEventListener('click',()=>ask(q.value));
+  q.addEventListener('keydown',e=>{if(e.key==='Enter')ask(q.value)});
+  document.querySelectorAll('.ask-chip').forEach(c=>c.addEventListener('click',()=>{q.value=c.textContent;ask(c.textContent)}));
+})();
+
+/* ---- animated collapse chart (real data: collapse_gpt2_results.json) ---- */
+(function(){
+  const PPL=[69.2,25.7,9.8,9.5,8.2,7.4], DET=[16.7,16.3,19.8,21.7,24.8,27.1];
+  const svg=document.getElementById('cviz'); if(!svg) return;
+  const W=1000,H=400,L=70,R=70,T=34,B=46, pw=W-L-R, ph=H-T-B;
+  const X=i=>L+pw*i/(PPL.length-1);
+  const Yp=v=>T+ph*(1-v/70), Yd=v=>T+ph*(1-v/100);
+  const NS='http://www.w3.org/2000/svg';
+  function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e}
+  // grid + axes
+  for(let g=0;g<=5;g++){el('line',{x1:X(g),y1:T,x2:X(g),y2:T+ph,stroke:'#20242f','stroke-width':1});
+    el('text',{x:X(g),y:H-18,fill:'#8b93a7','font-size':13,'text-anchor':'middle'}).textContent='gen '+g;}
+  [0,17.5,35,52.5,70].forEach(v=>{el('text',{x:L-12,y:Yp(v)+4,fill:'#ff6b78','font-size':12,'text-anchor':'end',opacity:.8}).textContent=v;});
+  [0,25,50,75,100].forEach(v=>{el('text',{x:W-R+12,y:Yd(v)+4,fill:'#f3b24a','font-size':12,opacity:.8}).textContent=v;});
+  el('text',{x:L-12,y:T-14,fill:'#ff6b78','font-size':12,'text-anchor':'end','font-weight':600}).textContent='ref. perplexity';
+  el('text',{x:W-R+12,y:T-14,fill:'#f3b24a','font-size':12,'font-weight':600}).textContent='detector score';
+  // threshold
+  el('line',{x1:L,y1:Yd(50),x2:W-R,y2:Yd(50),stroke:'#ff6b78','stroke-width':1.4,'stroke-dasharray':'7 6',opacity:.65});
+  el('text',{x:L+8,y:Yd(50)-8,fill:'#ff6b78','font-size':12,opacity:.85}).textContent='detector threshold (50) — never reached';
+  // lines
+  function line(data,Y,color){
+    const pts=data.map((v,i)=>X(i)+','+Y(v)).join(' ');
+    const p=el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':3.5,'stroke-linecap':'round','stroke-linejoin':'round'});
+    const len=p.getTotalLength();
+    p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+    p.style.transition='stroke-dashoffset 2.2s cubic-bezier(.3,.6,.2,1)';
+    data.forEach((v,i)=>{const c=el('circle',{cx:X(i),cy:Y(v),r:5.5,fill:'#0e1016',stroke:color,'stroke-width':2.6});
+      c.style.opacity=0;c.style.transition='opacity .4s '+(0.35*i+0.4)+'s';p._dots=(p._dots||[]).concat(c);});
+    return p;
+  }
+  const lp=line(PPL,Yp,'#ff6b78'), ld=line(DET,Yd,'#f3b24a');
+  // end labels
+  const e1=el('text',{x:X(5)-10,y:Yp(7.4)-14,fill:'#ff6b78','font-size':14,'font-weight':700,'text-anchor':'end'});e1.textContent='7.4';
+  const e2=el('text',{x:X(5)-10,y:Yd(27.1)-12,fill:'#f3b24a','font-size':14,'font-weight':700,'text-anchor':'end'});e2.textContent='27.1';
+  const s1=el('text',{x:X(0)+10,y:Yp(69.2)+5,fill:'#ff6b78','font-size':14,'font-weight':700});s1.textContent='69.2';
+  [e1,e2,s1].forEach(t=>{t.style.opacity=0;t.style.transition='opacity .5s 2s'});
+  const vio=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
+    [lp,ld].forEach(p=>{p.style.strokeDashoffset=0;(p._dots||[]).forEach(d=>d.style.opacity=1)});
+    [e1,e2,s1].forEach(t=>t.style.opacity=1); vio.disconnect();}})},{threshold:.4});
+  vio.observe(svg);
+})();
+
+</script>
+</body>
+</html>

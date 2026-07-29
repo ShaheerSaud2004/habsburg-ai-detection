@@ -1,0 +1,10 @@
+# Habsburg AI Detection -- dependencies
+#
+# The CORE system runs on the Python STANDARD LIBRARY ONLY:
+#   detector.py, data_generator.py, experiments.py, main.py, check_system.py
+# You can run all of those with nothing installed (Python 3.8+).
+#
+# The packages below are OPTIONAL:
+
+matplotlib>=3.5     # only for visualizations.py (the four figures)
+anthropic>=0.39     # only for the optional live-generation mode in data_generator.py

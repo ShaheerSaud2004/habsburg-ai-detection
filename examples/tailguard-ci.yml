@@ -1,0 +1,33 @@
+# TailGuard — contamination tripwire for training data, as a GitHub Action.
+# Drop into .github/workflows/ in any repo that versions a training corpus.
+# Fails the build when the corpus's distribution health degrades vs baseline
+# (n-gram diversity, vocabulary, duplication, synthetic-score distribution).
+
+name: tailguard
+on:
+  pull_request:
+    paths: ["data/**"]
+
+jobs:
+  corpus-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Zero dependencies: TailGuard is pure Python standard library.
+      - name: Fetch TailGuard
+        run: |
+          curl -sO https://habsburg-ai.vercel.app/tailguard.py
+          curl -sO https://habsburg-ai.vercel.app/detector.py
+
+      # baseline.json is committed once via:  python3 tailguard.py scan data/ -o baseline.json
+      - name: Corpus health tripwire
+        run: python3 tailguard.py compare baseline.json data/ --html tailguard_report.html
+        # exit 0 = healthy · 1 = warnings (fails) · 2 = critical (fails)
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tailguard-report
+          path: tailguard_report.html

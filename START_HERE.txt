@@ -1,0 +1,44 @@
+==========================================================
+  HABSBURG AI DETECTION  —  START HERE
+==========================================================
+
+Note: this was rebuilt locally on your Mac. The original lived in a
+claude.ai web sandbox (/home/claude/...), which is temporary and gets
+wiped when that session ends — that's why it couldn't be found on disk.
+
+WHAT THIS IS
+  A small research prototype for studying "Habsburg AI" / model collapse:
+  it scores text for how synthetic/collapsed it looks, estimates how
+  contaminated a dataset is, and runs four controlled experiments.
+
+  It runs on Python's standard library alone — no pip install, no API key.
+
+RUN THESE COMMANDS (in this folder)
+  python3 check_system.py     # confirm everything imports
+  python3 main.py             # see five scenarios (controlled demo)
+  python3 experiments.py      # controlled experiments -> experiment_results.json
+  python3 evaluate.py         # REAL data (HC3): held-out ROC/AUC + ablation
+  python3 crossmodel.py       # CROSS-MODEL: 1 detector vs 8 LLMs (RAID)
+  python3 lomo.py             # LEAVE-ONE-MODEL-OUT classifier <- strongest result
+  python3 collapse_experiment.py   # recursive model collapse, instrumented
+
+OPTIONAL (figures)
+  pip install -r requirements.txt
+  python3 visualizations.py   # writes figure1..figure4 PNGs
+
+THEN READ
+  PAPER.md        — the full arXiv-style write-up of all results (start here for the science)
+  README.md       — how it works + the six signals + LIMITATIONS
+  QUICKSTART.md   — the 5-minute version
+  NEXT_STEPS.md   — honest research/publication roadmap
+
+IMPORTANT
+  Three tracks, don't confuse them:
+   - experiments.py = CONTROLLED demo. ~100% accuracy is expected by
+     construction (stand-in texts). Do NOT quote these numbers.
+   - evaluate.py = REAL single model (HC3 / ChatGPT). AUC ~0.91.
+   - crossmodel.py = REAL, 8 models (RAID). The detector's AUC ranges
+     0.57-0.83 (mean ~0.72) and a trained perplexity baseline beats it.
+     THIS multi-model result is the honest, paper-worthy one.
+  See README.md (Limitations) and NEXT_STEPS.md for what still remains.
+==========================================================
