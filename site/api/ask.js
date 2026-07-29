@@ -1,7 +1,6 @@
 // /api/ask — "Ask this research" backend.
-// Streams answers from Shaheer's self-hosted OpenAI-compatible gateway.
-// The API key lives ONLY in Vercel env vars (AI_LOOP_BASE_URL / AI_LOOP_API_KEY);
-// the frontend never sees it.
+// Streams answers from an OpenAI-compatible provider (Groq primary, AI-Loop fallback).
+// API keys live ONLY in Vercel env vars; the frontend never sees them.
 
 export const config = { maxDuration: 60 };
 
@@ -19,17 +18,24 @@ KEY RESULTS (all reproducible, seed 1234):
 - TailGuard: the open-source corpus-health CLI built from the finding - snapshots vocabulary/n-gram diversity/duplication/score distributions and fails CI when a training corpus degrades.
 - Honest limitations: English only, hand-fixed weights, collapse shown on small models under replacement-style retraining (accumulating data can mitigate collapse, per Gerstgrasser et al.), quantitative magnitudes are model-specific.
 
-RULES: Be concise (under 150 words). Plain language. If asked something these facts don't cover, say so and point to the paper (PAPER.pdf on the site). Never invent numbers. You run on the author's self-hosted model, so keep answers efficient.`;
+RULES: Be concise (under 150 words). Plain language. If asked something these facts don't cover, say so and point to the paper (PAPER.pdf on the site). Never invent numbers.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "POST only" });
     return;
   }
-  const base = process.env.AI_LOOP_BASE_URL;
-  const key = process.env.AI_LOOP_API_KEY;
-  const model = process.env.AI_LOOP_MODEL || "auto";
-  if (!base || !key) {
+  // Provider chain: Groq (cloud, reliable) first; self-hosted AI-Loop as fallback.
+  let base, key, model;
+  if (process.env.GROQ_API_KEY) {
+    base = "https://api.groq.com/openai/v1";
+    key = process.env.GROQ_API_KEY;
+    model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  } else if (process.env.AI_LOOP_BASE_URL && process.env.AI_LOOP_API_KEY) {
+    base = process.env.AI_LOOP_BASE_URL;
+    key = process.env.AI_LOOP_API_KEY;
+    model = process.env.AI_LOOP_MODEL || "auto";
+  } else {
     res.status(503).json({ error: "assistant_not_configured" });
     return;
   }

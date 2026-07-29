@@ -10,7 +10,7 @@
   --bg:#0d1117; --bg-soft:#010409; --panel:#161b22; --panel-2:#161b22; --panel-3:#21262d;
   --line:#30363d; --line-2:#3d444d;
   --ink:#e6edf3; --ink-2:#c9d1d9; --muted:#8b949e; --faint:#6e7681;
-  --gold:#4493f8; --gold-2:#79c0ff; --blue:#58a6ff; --violet:#bc8cff; --green:#3fb950; --red:#f85149;
+  --gold:#d29922; --gold-2:#e3b341; --blue:#58a6ff; --violet:#bc8cff; --green:#3fb950; --red:#f85149;
   --ghgreen:#238636; --ghgreen-2:#2ea043;
   --display:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
@@ -22,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:16.5px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-::selection{background:rgba(68,147,248,.3)}
+::selection{background:rgba(210,153,34,.35)}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
@@ -44,14 +44,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);b
 nav.scrolled{background:rgba(10,11,15,.82);border-bottom-color:var(--line)}
 nav .wrap{display:flex;align-items:center;height:64px;gap:24px}
 .brand{font-family:var(--display);font-weight:700;letter-spacing:-.01em;font-size:1.05rem;display:flex;align-items:center;gap:9px}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--gold)}
 .navlinks{margin-left:auto;display:flex;gap:18px}
 .navlinks a{color:var(--muted);font-size:.85rem;font-weight:500;transition:.15s;white-space:nowrap}
 .navlinks a:hover{color:var(--ink)}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-weight:600;font-size:.9rem;border:1px solid var(--line);background:var(--panel-3);transition:.15s;cursor:pointer}
 .btn:hover{border-color:var(--line-2);background:var(--panel-3)}
-.btn.primary{background:var(--ghgreen);color:#fff;border:1px solid rgba(240,246,252,.1)}
-.btn.primary:hover{background:var(--ghgreen-2)}
+.btn.primary{background:var(--gold);color:#0d1117;border:1px solid rgba(240,246,252,.1);font-weight:700}
+.btn.primary:hover{background:var(--gold-2)}
 .nav-cta{display:flex;gap:10px}
 
 /* hero */
@@ -65,7 +65,7 @@ nav .wrap{display:flex;align-items:center;height:64px;gap:24px}
 .hero .wrap{position:relative;z-index:1}
 .hero h1{font-size:clamp(2rem,4.6vw,3.3rem);max-width:24ch;margin:.35em 0 .2em;font-weight:700}
 .hero h1 .grad{color:var(--gold)}
-.thesis{margin-top:22px;max-width:720px;font-size:clamp(1rem,1.4vw,1.15rem);color:var(--ink-2);border-left:3px solid var(--line-2);padding-left:16px}
+.thesis{margin-top:22px;max-width:720px;font-size:clamp(1rem,1.4vw,1.15rem);color:var(--ink);border-left:3px solid var(--gold);padding-left:16px}
 .hero-cta{display:flex;gap:13px;flex-wrap:wrap;margin-top:34px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:64px}
 .stat{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:22px}
@@ -122,7 +122,7 @@ figure img{cursor:zoom-in}
 .ask-box{background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;margin-top:30px}
 .ask-row{display:flex;gap:12px}
 .ask-row input{flex:1;background:var(--bg-soft);color:var(--ink);border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;font-family:var(--sans);font-size:.98rem;transition:.2s}
-.ask-row input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(68,147,248,.15)}
+.ask-row input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(210,153,34,.18)}
 .ask-answer{margin-top:18px;min-height:24px;color:var(--ink-2);font-size:.98rem;line-height:1.75;white-space:pre-wrap;display:none}
 .ask-answer.on{display:block}
 .ask-answer .cursor{display:inline-block;width:8px;height:1.1em;background:var(--gold);vertical-align:text-bottom;margin-left:2px;animation:blink 1s steps(1) infinite}
@@ -175,7 +175,7 @@ figure img{cursor:zoom-in}
 /* demo */
 .demo{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start;margin-top:34px}
 textarea{width:100%;min-height:260px;background:var(--bg-soft);color:var(--ink);border:1px solid var(--line-2);border-radius:var(--r);padding:18px;font-family:var(--mono);font-size:.88rem;line-height:1.6;resize:vertical;transition:.2s}
-textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(68,147,248,.15)}
+textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(210,153,34,.18)}
 .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .chip{font-size:.83rem;padding:8px 15px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink-2);cursor:pointer;transition:.2s}
 .chip:hover{border-color:var(--gold);color:var(--ink)}
@@ -303,7 +303,7 @@ h3.sub{font-family:var(--display);font-size:1.2rem;margin:36px 0 8px;color:var(-
 <section class="section" id="ask"><div class="wrap">
   <div class="kicker reveal"><span class="eyebrow">Ask the research · live</span></div>
   <h2 class="reveal" data-d="1">Questions? Ask the paper's assistant</h2>
-  <p class="lede reveal" data-d="1">A small language model running on the author's own hardware, grounded in this paper's actual results. It streams answers live — and it will tell you when something is outside what the research covers.</p>
+  <p class="lede reveal" data-d="1">A language model grounded in this paper's actual results. It streams answers live — and it will tell you when something is outside what the research covers.</p>
   <div class="ask-box reveal" data-d="2">
     <div class="chips" style="margin:0 0 16px">
       <span class="chip ask-chip">What is model collapse?</span>
@@ -316,7 +316,7 @@ h3.sub{font-family:var(--display);font-size:1.2rem;margin:36px 0 8px;color:var(-
       <button class="btn primary" id="askbtn">Ask</button>
     </div>
     <div class="ask-answer" id="askans"></div>
-    <div class="ask-status"><span class="ask-live" id="asklive"><span class="dot2"></span><span id="asklabel">assistant online — self-hosted, answers may be imperfect; trust the paper over the chatbot</span></span></div>
+    <div class="ask-status"><span class="ask-live" id="asklive"><span class="dot2"></span><span id="asklabel">assistant online — answers may be imperfect; trust the paper over the chatbot</span></span></div>
   </div>
 </div></section>
 
@@ -642,14 +642,14 @@ document.getElementById('ta').value=PRE.ai;render();
     try{
       const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});
       if(r.status===429){setStatus(false,'the model is busy right now — try again in a minute');ans.textContent='';throw 0}
-      if(!r.ok){setStatus(false,'assistant is offline (it runs on the author\u2019s own machine) — the paper below has everything');ans.textContent='';throw 0}
+      if(!r.ok){setStatus(false,'assistant is temporarily unavailable — the paper below has everything');ans.textContent='';throw 0}
       const reader=r.body.getReader(), dec=new TextDecoder();let text='';
       for(;;){const {done,value}=await reader.read();if(done)break;
         text+=dec.decode(value,{stream:true});
         ans.innerHTML='';ans.appendChild(document.createTextNode(text));
         const c=document.createElement('span');c.className='cursor';ans.appendChild(c);}
       ans.innerHTML='';ans.appendChild(document.createTextNode(text||'(no answer — try again)'));
-      setStatus(true,'assistant online — self-hosted, answers may be imperfect; trust the paper over the chatbot');
+      setStatus(true,'assistant online — answers may be imperfect; trust the paper over the chatbot');
     }catch(e){}
     busy=false;btn.textContent='Ask';
   }
